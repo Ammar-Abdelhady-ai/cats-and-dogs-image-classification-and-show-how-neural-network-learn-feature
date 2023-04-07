@@ -70,3 +70,52 @@ These feature maps we want to visualize have 3 dimensions: width, height, and de
 #### We'll extract and plot every channel in each of our 8 activation maps, 
 #### and we will stack the results in one big image tensor, 
 #### with channels stacked side by side.
+
+### Visualizing heatmaps of class activation
+
+
+#### We will introduce one more visualization technique, one that is useful for understanding which parts of a given image led a convnet to its final classification decision. This is helpful for "debugging" the decision process of a convnet, in particular in case of a classification mistake. It also allows you to locate specific objects in an image.
+
+#### This general category of techniques is called "Class Activation Map" (CAM) visualization, and consists in producing heatmaps of "class activation" over input images. A "class activation" heatmap is a 2D grid of scores associated with an specific output class, computed for every location in any input image, indicating how important each location is with respect to the class considered. For instance, given a image fed into one of our "cat vs. dog" convnet, Class Activation Map visualization allows us to generate a heatmap for the class "cat", indicating how cat-like different parts of the image are, and likewise for the class "dog", indicating how dog-like differents parts of the image are
+
+###  Grad-CAM
+The specific implementation we will use is the one described in Grad-CAM: Why did you say that? Visual Explanations from Deep Networks via Gradient-based Localization.
+
+It is very simple: it consists in taking the output feature map of a convolution layer given an input image, and weighing every channel in that feature map by the gradient of the class with respect to the channel.
+
+Intuitively, one way to understand this trick is that we are weighting a spatial map of "how intensely the input image activates different channels" by "how important each channel is with regard to the class", resulting in a spatial map of "how intensely the input image activates the class".
+
+#### Let's consider the following image of Cat, 
+#### possible a mother and its cub, 
+#### strolling in the savanna (under a Creative Commons license):
+
+![image](https://user-images.githubusercontent.com/76500493/230624995-24fd490d-7703-4682-a752-e629273c0f5b.png)
+
+#### The conv2d_259 output is batch_sizexx8x8x320 = 1x8x8x320
+
+#### Now, we can merge the block5_conv3 outputs (batch_sizex8x8x320),
+#### by weighting and sum over the 320 dimension with the grads to get one heatmap 1x8x8.
+
+For visualization purpose, we will also normalize the heatmap between 0 and 1:
+
+![image](https://user-images.githubusercontent.com/76500493/230625078-c145036a-82a8-4961-bb30-c9c08e2c515e.png)
+
+Finally, we will use OpenCV to generate an image that superimposes the original image with the heatmap we just obtained.
+
+The resulting heatmap is 8x8, with each block has a receptive field over the input 224x224 image.
+
+You can think of it as a drop of ink spilled over to cover bigger area.
+
+So each block of the 8x8 corresponds to an area of size = 224/8x224/8 in the input image.
+
+![image](https://user-images.githubusercontent.com/76500493/230625152-90aca9dc-547e-4fc3-83dc-6a378c538750.png)
+
+#### This visualisation technique answers two important questions:
+
+#####  - Why did the network think this image contained an cat?
+##### - Where is the cat located in the picture?
+
+
+#### In particular, it is interesting to note that the ears of cat cub are strongly activated: this is probably how the network can tell the difference between cats type(Egyptian_cat, tiger_cat, )
+
+
